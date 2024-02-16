@@ -2,8 +2,6 @@
 #include <LoRa.h>
 #include <esp_sleep.h>
 
-RTC_DATA_ATTR byte out_packet [3] = {69, 0, 0}; 
-
 #define SCK 5     //Clock Signal
 #define MISO 19   //Master input Slave output
 #define MOSI 27   //Master output Slave input
@@ -11,6 +9,9 @@ RTC_DATA_ATTR byte out_packet [3] = {69, 0, 0};
 #define RST 14    //Reset PIN
 #define DIO0 26   //Digital Input-Output
 
+#define NET_ID 0x53AC ////ID that all emmiters must use to communicate with gateway
+
+RTC_DATA_ATTR byte out_packet [3] = {(NET_ID & 0xFF00) >> 8, NET_ID & 0x00FF, 0}; 
 
 int LoRaConfig(int sck, int miso, int mosi, int ss, int rst, int dio0, int freq, int sf, int bw);
 void SwReset(int countdown);
