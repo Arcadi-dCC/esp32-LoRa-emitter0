@@ -9,18 +9,21 @@
 #define RST 14    //Reset PIN
 #define DIO0 26   //Digital Input-Output
 
-#define NET_ID 0x53AC ////ID that all emmiters must use to communicate with gateway
+#define NET_ID 0x53AC //ID that all emmiters must use to communicate with gateway
+#define EMITTER_ID 0x00 //ID of the emitter
 
-RTC_DATA_ATTR byte out_packet [3] = {(NET_ID & 0xFF00) >> 8, NET_ID & 0x00FF, 0}; 
+RTC_DATA_ATTR byte out_packet [4] = {(NET_ID & 0xFF00) >> 8, NET_ID & 0x00FF, EMITTER_ID, 0}; 
 boolean channel_busy = true;
 boolean Cad_isr_responded = false;
+boolean ack_received = false;
 
 int LoRaConfig(int sck, int miso, int mosi, int ss, int rst, int dio0, int freq, int sf, int bw);
 void SwReset(int countdown);
 boolean isChannelBusy(void);
 void onCadDone(boolean signalDetected);
 void printStr(byte* str, int len);
-void onTxDone(void);
+//void onTxDone(void);
+void onReceive(int packetSize);
 
 void setup() {
  
@@ -34,7 +37,8 @@ void setup() {
     SwReset(10);
   }
   LoRa.onCadDone(onCadDone);
-  //LoRa.onTxDone(onTxDone);
+  LoRa.onTxDone(onTxDone);
+  LoRa.onReceive(onReceive);
   
   delay(1000);
 
@@ -42,7 +46,7 @@ void setup() {
   if(isChannelBusy())
   {
     Serial.println("Channel is busy. Retrying in a few seconds");
-    esp_deep_sleep(random(10,14)*1000000);
+    esp_deep_sleep(random(100,140)*100000);
   }
 
   // send packet
@@ -52,10 +56,18 @@ void setup() {
   while(!LoRa.beginPacket());
   //LoRa.print("0");                //Configurat per enviar 0 sempre (per no anar variant el tamany dels paquets)
   LoRa.write(out_packet, sizeof(out_packet));
-  LoRa.endPacket(false);             //blocking mode
-  out_packet[2] = (out_packet[2] + 1 ) % 32;
-  Serial.print("Sleeping for 2 minutes");
-  esp_deep_sleep(120*1000000);
+  LoRa.endPacket(false); //blocking mode
+  if(acknowledgement(5))
+  {
+    Serial.println("Acknowledgement not received. Retrying in a few seconds");
+    esp_deep_sleep(random(100,140)*100000);
+  }
+  else
+  {
+    out_packet[2] = (out_packet[2] + 1 ) % 32;
+    Serial.print("Sleeping for 2 minutes");
+    esp_deep_sleep(120*1000000); 
+  }
 }
 
 void loop() {
@@ -133,10 +145,46 @@ void SwReset(int countdown)
   ESP.restart();
 }
 
-//Called when the sending of data is finished. Currently not used
+//Waits for acknowledgement for some time. Timeout in ms. Returns 0 if ACK, 1 if no ACK
+int acknowledgement(unsigned long timeout)
+{
+  unsigned long start_time = millis();
+  while((!ack_received) or (millis() < (start_time+timeout)))
+  {
+    delay(1);
+  }
+  if(ack_received)
+  {
+    return 0;
+  }
+  else
+  {
+    return 1;
+  }
+}
+
+//Called when the sending of data is finished. Not used
 void onTxDone(void)
 {
-  //sleep for 1'
-  Serial.print("Sleeping for 1 minute");
-  esp_deep_sleep(60*1000000);
+  
+}
+
+//Called when some data is received. Used for acknowledgement
+void onReceive(int packetSize)
+{
+  int w = 0;
+  //Checks if the packet is long enough for an ID to fit
+  if(packetSize > 2)
+  {
+    //Reads the ID values and compares to the established ID
+    for(w = 0;w<2;w++) values[w] = LoRa.read();
+    if(values[0] == (((NET_ID & 0xFF00) >> 8)) and (values[1] == (NET_ID & 0x00FF)))
+    {
+      //Continues if ID is correct
+      if(packetSize > BUFFER_SIZE) num_values = BUFFER_SIZE;
+      else num_values = packetSize;
+      
+      for(w = 2; w < num_values; w++) values[w] = LoRa.read();
+    }
+  } 
 }
