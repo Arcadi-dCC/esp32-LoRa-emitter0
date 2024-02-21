@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 #include <esp_sleep.h>
-#include <SPI.h>
 #include <LoRa.h>
 
 #include <LoRaPrivate.h>
