@@ -2,11 +2,8 @@
 #include <platformTypes.h>
 
 #include <LoRaPrivate.h>
-#include <LoRaCfg.h>
 #include <customUtilities.h>
 #include <esp_sleep.h>
-
-RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 0}; 
 
 void setup() {
  
@@ -27,26 +24,22 @@ void setup() {
     esp_deep_sleep(random(100,140)*100000);
   }
 
-  if(sendPacket(out_packet, OUT_BUFFER_SIZE))
+  if(sendPacket(out_packet, sizeof(out_packet)))
   {
     SwReset(10);
   }
-  /*
-  if(acknowledgement(5000))
+  
+  if(awaitAck())
   {
     Serial.println("Acknowledgement not received. Retrying in a few seconds");
     esp_deep_sleep(random(100,140)*100000);
   }
   else
   {
-    out_packet[2] = (out_packet[2] + 1 ) % 32;
-    Serial.print("Sleeping for 2 minutes");
-    esp_deep_sleep(120*1000000); 
+    out_packet[3] = (out_packet[3] + 1 ) % 32;
+    Serial.println("Sleeping for 2 minutes");
+    esp_deep_sleep(30*1000000); 
   }
-  */
-  out_packet[3] = (out_packet[3] + 1 ) % 32;
-  Serial.print("Sleeping for 2 minutes");
-  esp_deep_sleep(120*1000000); 
 }
 
 void loop() {
