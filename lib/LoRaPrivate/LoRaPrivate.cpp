@@ -1,36 +1,45 @@
 #include <Arduino.h>
+
+#include <LoRaPrivate.h>
+#include <LoRaCfg.h>
+
 #include <SPI.h>
 #include <LoRa.h>
-#include <LoRaPrivate.h>
+#include <customUtilities.h>
 
 bool Cad_isr_responded = false;
 bool channel_busy = true;
 bool ack_received = false;
 
 //Encapsules the whole LoRa configuration. Returns 0 if successful, 1 if error.
-uint8 LoRaConfig(uint8 sck, uint8 miso, uint8 mosi, uint8 ss, uint8 rst, uint8 dio0, uint32 freq, uint8 sf, uint32 bw)
+uint8 LoRaConfig(void)
 {
   Serial.println("Configuring LoRa");
   //SPI LoRa pins
-  SPI.begin(sck,miso,mosi,ss);
+  SPI.begin(SCK, MISO, MOSI, SS);
   
   //setup LoRa transceiver module
-  LoRa.setPins(ss, rst, dio0);
+  LoRa.setPins(SS, RST, DIO0);
   
-  if (!LoRa.begin(freq)) {
+  if (!LoRa.begin(FREQ)) {
     Serial.println("Starting LoRa failed!");
     return 1;
   }
   
-  LoRa.setSpreadingFactor(sf);        //LoRa Spreading Factor configuration.
-  LoRa.setSignalBandwidth(bw);     //LoRa Bandwidth configuration.
-  //LoRa.setPreambleLength(8);
+  LoRa.setSpreadingFactor(SPR_FACT);
+  LoRa.setSignalBandwidth(BANDWIDTH);
+  //LoRa.setPreambleLength(PREAM_LEN);
   //LoRa.enableInvertIQ();
-  //LoRa.setSyncWord(0x00);
+  //LoRa.setSyncWord(SYNC_WORD);
+
+  LoRa.onCadDone(onCadDone); //call onCadDone ISR when channel activity detection has finished
+  LoRa.onTxDone(onTxDone); //call onTxDone ISR when packet has been fully sent
+  LoRa.onReceive(onReceive); //call onReceive ISR when signals are received
+  
   return 0;  
 }
 
-//Checks if someone is using the configured channel. Returns true if used, false if free
+//Blocking. Checks if someone is using the configured channel. Returns true if used, false if free
 bool isChannelBusy(void)
 {
   Cad_isr_responded = false;
@@ -42,17 +51,30 @@ bool isChannelBusy(void)
   return channel_busy;
 }
 
-void onCadDone(bool signalDetected) //true = signal detected
+void onCadDone(bool signalDetected) //true menas signal is detected
 {
   channel_busy = signalDetected;
   Cad_isr_responded = true;
+}
+
+//Sends a packet through LoRa. Returns 0 if successful, 1 if error
+uint8 sendPacket(uint8* packet, uint16 packet_len)
+{
+  Serial.print("Sending: ");
+  printStr(packet, packet_len);
+  Serial.println();
+  while(!LoRa.beginPacket()); // a timeout could go here
+  LoRa.write(packet, packet_len);
+  LoRa.endPacket(false); //blocking mode
+
+  return 0;
 }
 
 //Waits for acknowledgement for some time. Timeout in ms. Returns 0 if ACK, 1 if no ACK
 uint8 acknowledgement(uint16 timeout)
 {
   uint16 start_time = millis();
-  while((!ack_received) or (millis() < (start_time+timeout)))
+  while((!ack_received) or (millis() < (start_time+timeout))) //might fail once every 50 days
   {
     delay(1);
   }
@@ -78,11 +100,11 @@ void onReceive(int packetSize)
   //Checks if the packet has the exact length for GATEWAY_ID and EMITTER_ID to fit
   if(packetSize == 3)
   {
-    uint8 in_packet[3];
+    uint8 in_packet[GATEWAY_ID_LEN + 1];
     int w = 0;
 
     //Reads the ID values and compares to the established ID
-    for(w = 0;w<3;w++) in_packet[w] = LoRa.read();
+    for(w = 0;w<(GATEWAY_ID_LEN+1);w++) in_packet[w] = LoRa.read();
     if(in_packet[0] == (((GATEWAY_ID & 0xFF00) >> 8)) and (in_packet[1] == (GATEWAY_ID & 0x00FF)) and (in_packet[2] == EMITTER_ID))
     {
       ack_received = true;

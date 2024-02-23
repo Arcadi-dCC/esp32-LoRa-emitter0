@@ -1,6 +1,6 @@
-#include <customUtilities.h>
-
 #include <Arduino.h>
+
+#include <customUtilities.h>
 
 //Prints a uint8 string of len length. Returns 0 if successful, 1 if len = 0
 uint8 printStr(uint8* str, uint16 len)
