@@ -37,7 +37,7 @@ void setup() {
   else
   {
     out_packet[3] = (out_packet[3] + 1 ) % 32;
-    Serial.println("Sleeping for 2 minutes");
+    Serial.println("Sleeping for 30 seconds");
     esp_deep_sleep(30*1000000); 
   }
 }
