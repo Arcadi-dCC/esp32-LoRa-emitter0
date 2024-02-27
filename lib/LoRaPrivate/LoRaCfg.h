@@ -22,6 +22,6 @@
 #define GATEWAY_ID          0x53AC  //ID that all emmiters must use to communicate with gateway
 #define GATEWAY_ID_LEN      2       //Number of bytes that compose the gateway ID
 
-#define ACK_TIMEOUT         5000    //Acknowledgment timeout (ms)
+#define ACK_TIMEOUT         5000U   //Acknowledgment timeout (ms)
 
 #endif //LoRaCfg_H

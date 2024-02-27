@@ -45,8 +45,8 @@ bool isChannelBusy(void)
 {
   Cad_isr_responded = false;
   LoRa.channelActivityDetection();
-  uint16 start_time = millis();
-  while((!Cad_isr_responded) and (millis() < (start_time + 1000)))
+  uint32 start_time = millis();
+  while((!Cad_isr_responded) and ((millis() - start_time) < 1000U))
   {
     NOP();
   }
@@ -80,12 +80,14 @@ uint8 sendPacket(uint8* packet, uint16 packet_len)
   return 0;
 }
 
-//Waits for acknowledgement for some time. Timeout set in Cfg file. Returns 0 if ACK, 1 if no ACK
+//Waits for acknowledgement for some time.
+//Blocking, with ACK_TIMEOUT.
+//Returns 0 if ACK, 1 if no ACK
 uint8 awaitAck(void)
 {
   LoRa.receive();
-  uint16 start_time = millis();
-  while((!ack_received) and (millis() < (start_time + ACK_TIMEOUT))) //might fail once every 50 days
+  uint32 start_time = millis();
+  while((!ack_received) and ((millis() - start_time) < ACK_TIMEOUT))
   {
     NOP();
   }
@@ -102,13 +104,27 @@ uint8 awaitAck(void)
 
 /* NOT USABLE IN EMITTER
 //Sends a small packet with GATEWAY_ID and the EMITTER_ID received through LoRa.
-//Returns 0 if OK, 1 if error.
+//Blocking: Waits for the channel to be available, with ACK_TIMEOUT.
+//Returns 0 if successful, 1 if error.
 uint8 replyAck(void)
 {
-  uint8 out_packet[3] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, in_packet[GATEWAY_ID_LEN]};
-  uint8 returner = sendPacket(out_packet, sizeof(out_packet));
-  LoRa.receive();
-  return returner;
+  uint8 err_reg = 1;
+  while(!LoRa.beginPacket()); //exit receive mode
+
+  uint32 start_time = millis();
+  do
+  {
+    err_reg = (uint8)isChannelBusy();
+  } while(err_reg and ((millis() - start_time) < ACK_TIMEOUT));
+
+  if(!err_reg)
+  {
+    uint8 out_packet[3] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, in_packet[GATEWAY_ID_LEN]};
+    err_reg = sendPacket(out_packet, sizeof(out_packet));
+  }
+
+  LoRa.receive(); //reenter receive mode
+  return err_reg;
 }*/
 
 /* NOT USED
