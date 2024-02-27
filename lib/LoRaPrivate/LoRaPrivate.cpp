@@ -8,9 +8,9 @@
 
 RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 0};
 
-bool Cad_isr_responded = false;
-bool channel_busy = true;
-bool ack_received = false;
+volatile bool Cad_isr_responded = false;
+volatile bool channel_busy = true;
+volatile bool ack_received = false;
 
 //Encapsules the whole LoRa configuration. Returns 0 if successful, 1 if error.
 uint8 LoRaConfig(void)
@@ -40,31 +40,40 @@ uint8 LoRaConfig(void)
   return 0;  
 }
 
-//Blocking. Checks if someone is using the configured channel. Returns true if used, false if free
+//Blocking. Checks if someone is using the configured channel. Returns true if used, false if free. 1s timeout
 bool isChannelBusy(void)
 {
   Cad_isr_responded = false;
   LoRa.channelActivityDetection();
-  while(!Cad_isr_responded)
+  uint16 start_time = millis();
+  while((!Cad_isr_responded) and (millis() < (start_time + 1000)))
   {
-    delay(1);
+    NOP();
   }
-  return channel_busy;
+  if(Cad_isr_responded)
+  {
+    return channel_busy;
+  }
+  else
+  {
+    return 1;
+  }
 }
 
+//ISR called when Channel Activity Detection has finished.
 void onCadDone(bool signalDetected) //true menas signal is detected
 {
   channel_busy = signalDetected;
   Cad_isr_responded = true;
 }
 
-//Sends a packet through LoRa. Returns 0 if successful, 1 if error
+//Sends a packet through LoRa. Blocking. Returns 0 if successful, 1 if error
 uint8 sendPacket(uint8* packet, uint16 packet_len)
 {
   Serial.print("Sending: ");
   printStr(packet, packet_len);
   Serial.println();
-  while(!LoRa.beginPacket()); // a timeout could go here
+  while(!LoRa.beginPacket());
   LoRa.write(packet, packet_len);
   LoRa.endPacket(false); //blocking mode
 
@@ -78,7 +87,7 @@ uint8 awaitAck(void)
   uint16 start_time = millis();
   while((!ack_received) and (millis() < (start_time + ACK_TIMEOUT))) //might fail once every 50 days
   {
-    delay(1);
+    NOP();
   }
   if(ack_received)
   {
@@ -92,23 +101,24 @@ uint8 awaitAck(void)
 }
 
 /* NOT USABLE IN EMITTER
-//Sends a small packet with GATEWAY_ID and the EMITTER_ID received through LoRa. Returns 0 if OK, 1 if error
+//Sends a small packet with GATEWAY_ID and the EMITTER_ID received through LoRa.
+//Returns 0 if OK, 1 if error.
 uint8 replyAck(void)
 {
   uint8 out_packet[3] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, in_packet[GATEWAY_ID_LEN]};
   uint8 returner = sendPacket(out_packet, sizeof(out_packet));
   LoRa.receive();
   return returner;
-}
-*/
+}*/
 
-//Called when the sending of data is finished. Not used
+/* NOT USED
+//ISR called when the sending of data is finished.
 void onTxDone(void)
 {
   
-}
+}*/
 
-//Called when some data is received. Used for acknowledgement
+//ISR called when detecting LoRa signals in receive mode. Used for acknowledgement
 void onReceive(int packetSize)
 {
   //Checks if the packet has the exact length for GATEWAY_ID and EMITTER_ID to fit
