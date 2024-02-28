@@ -6,7 +6,7 @@
 #include <LoRa.h>
 #include <customUtilities.h>
 
-RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 0};
+RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 69, 0}; //Final items: data id, data
 
 volatile bool Cad_isr_responded = false;
 volatile bool channel_busy = true;
