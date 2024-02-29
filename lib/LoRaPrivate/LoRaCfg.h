@@ -15,7 +15,6 @@
 //#define SYNC_WORD 0x00                            //Syncronization byte
 //#define PREAM_LEN 8                               //Signal preamble length
 
-#define OUT_BUFFER_SIZE     4       //Bytes per packet that will be sent
 #define EMITTER_ID          0x00                    //ID for each emitter
 
 #define GATEWAY_ID          0x53AC                  //ID that all emmiters must use to communicate with gateway
