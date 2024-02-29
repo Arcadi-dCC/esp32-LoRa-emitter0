@@ -67,6 +67,22 @@ void onCadDone(bool signalDetected) //true menas signal is detected
   Cad_isr_responded = true;
 }
 
+//Prepares the packet with the data to send next. Returns 0 if successful, 1 if error.
+uint8 prepareNextPacket(void)
+{
+  //establish a new random data ID
+  uint8 old_data_id = out_packet[GATEWAY_ID_LEN + 1U];
+  do
+  {
+    out_packet[GATEWAY_ID_LEN + 1U] = (uint8)random(0xFF);
+  }while(out_packet[GATEWAY_ID_LEN + 1U] == old_data_id);
+  
+  //introduce the new value
+  out_packet[GATEWAY_ID_LEN + 2U] = (out_packet[GATEWAY_ID_LEN + 2U] + 1 ) % 32;
+
+  return 0;
+}
+
 //Sends a packet through LoRa. Blocking. Returns 0 if successful, 1 if error
 uint8 sendPacket(uint8* packet, uint16 packet_len)
 {

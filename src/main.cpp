@@ -37,13 +37,7 @@ void setup() {
   }
   else
   {
-    uint8 old_data_id = out_packet[3];
-    do
-    {
-      out_packet[3] = (uint8)random(0xFF);
-    }while(out_packet[3] == old_data_id);
-    
-    out_packet[4] = (out_packet[4] + 1 ) % 32;
+    (void)prepareNextPacket();
     Serial.println("Sleeping for 2 minutes");
     esp_deep_sleep(120*1000000); 
   }
