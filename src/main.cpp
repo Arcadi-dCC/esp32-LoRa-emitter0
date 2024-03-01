@@ -4,6 +4,11 @@
 #include <LoRaPrivate.h>
 #include <customUtilities.h>
 #include <esp_sleep.h>
+#include <ESP32Time.h>
+
+ESP32Time rtc(3600); //UTC + 1. THIS MIGHT BE RTC_DATA_ATTR?????
+RTC_DATA_ATTR bool time_configured = false;
+RTC_DATA_ATTR uint32 epoch_time = 0;
 
 void setup() {
  
@@ -16,6 +21,31 @@ void setup() {
     SwReset(10);
   }
   delay(1000);
+
+  if(!time_configured)
+  {
+    if(askEpochTime())
+    {
+      Serial.println("Failed to ask for updated time. Retrying in a few seconds");
+      esp_deep_sleep(random(100,140)*100000);
+    }
+    else
+    {
+      if(awaitEpochTimeReply(&epoch_time))
+      {
+        Serial.println("Failed to receive updated time. Retrying in a few seconds");
+        esp_deep_sleep(random(100,140)*100000);
+      }
+      else
+      {
+        rtc.setTime(epoch_time);
+        time_configured = true;
+      }
+    }
+  }
+
+  Serial.print("Configured time: ");
+  Serial.println(rtc.getDateTime());
 
   //Retry in a few seconds if channel is busy
   if(isChannelBusy())

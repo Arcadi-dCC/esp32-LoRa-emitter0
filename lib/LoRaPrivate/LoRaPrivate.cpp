@@ -7,10 +7,12 @@
 #include <customUtilities.h>
 
 RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 69, 0}; //Final items: data id, data
+volatile uint8 in_packet [IN_BUFFER_SIZE];
 
 volatile bool Cad_isr_responded = false;
 volatile bool channel_busy = true;
 volatile bool ack_received = false;
+volatile bool epoch_received = false;
 
 //Encapsules the whole LoRa configuration. Returns 0 if successful, 1 if error.
 uint8 LoRaConfig(void)
@@ -83,6 +85,21 @@ uint8 prepareNextPacket(void)
   return 0;
 }
 
+//Sends a message to gateway asking for an update on epoch time.
+//Returns 0 if the asking is sucessful, 1 if error or channel is busy.
+uint8 askEpochTime(void)
+{
+  out_packet[GATEWAY_ID_LEN] = EPOCH_MSG_ID;
+  if(isChannelBusy())
+  {
+    out_packet[GATEWAY_ID_LEN] = EMITTER_ID;
+    return 2U;
+  }
+  uint8 returner = sendPacket(out_packet, GATEWAY_ID_LEN + 1U);
+  out_packet[GATEWAY_ID_LEN] = EMITTER_ID;
+  return returner;
+}
+
 //Sends a packet through LoRa. Blocking. Returns 0 if successful, 1 if error
 uint8 sendPacket(uint8* packet, uint16 packet_len)
 {
@@ -110,6 +127,40 @@ uint8 awaitAck(void)
   if(ack_received)
   {
     ack_received = false;
+    return 0;
+  }
+  else
+  {
+    return 1;
+  }
+}
+
+//Waits for reply with epoch.
+//Blocking, with ACK_TIMEOUT.
+//Returns 0 if epoch time was received, 1 if not.
+uint8 awaitEpochTimeReply(uint32* epoch_time)
+{
+  LoRa.receive();
+  uint32 start_time = millis();
+  while((!epoch_received) and ((millis() - start_time) < EPOCH_TIMEOUT))
+  {
+    NOP();
+  }
+  *epoch_time = 0;
+  while(!LoRa.beginPacket()); //exit receive mode
+  if(epoch_received)
+  {
+    epoch_received = false;
+
+    for(uint8 i = GATEWAY_ID_LEN + 1U; i < GATEWAY_ID_LEN + 5U; i++)
+    {
+      (*epoch_time) += ((uint32)in_packet[i]) << (8*(GATEWAY_ID_LEN + 4U-i));
+    }
+    Serial.print("Received epoch time string: ");
+    printStr((uint8*)in_packet, 7U);
+    Serial.println();
+    Serial.print("With reconstructed epoch value: ");
+    Serial.println(*epoch_time);
     return 0;
   }
   else
@@ -153,17 +204,34 @@ void onTxDone(void)
 //ISR called when detecting LoRa signals in receive mode. Used for acknowledgement
 void onReceive(int packetSize)
 {
-  //Checks if the packet has the exact length for GATEWAY_ID and EMITTER_ID to fit
-  if(packetSize == GATEWAY_ID_LEN + 1)
+  uint8 w = 0;
+  switch (packetSize)
   {
-    uint8 in_packet[GATEWAY_ID_LEN + 1];
-    int w = 0;
-
-    //Reads the ID values and compares to the established IDs
-    for(w = 0;w<(GATEWAY_ID_LEN+1);w++) in_packet[w] = LoRa.read();
-    if(in_packet[0] == (((GATEWAY_ID & 0xFF00) >> 8)) and (in_packet[1] == (GATEWAY_ID & 0x00FF)) and (in_packet[2] == EMITTER_ID))
-    {
-      ack_received = true;
+    case (GATEWAY_ID_LEN + 1U): //Exact fit for ACK message
+    {    
+      //Reads the ID values and compares to the established IDs
+      for(w = 0;w<(GATEWAY_ID_LEN+1);w++) in_packet[w] = LoRa.read();
+      if(in_packet[0] == (((GATEWAY_ID & 0xFF00) >> 8)) and (in_packet[1] == (GATEWAY_ID & 0x00FF)) and (in_packet[2] == EMITTER_ID))
+      {
+        ack_received = true;
+      }
+      break;
     }
-  } 
+
+    case (GATEWAY_ID_LEN + 5U): //Exact fit for epoch time message
+    {
+      //Reads the ID values and compares to the estabished GATEWAY_ID and EPOCH_MSG_ID
+      for(w = 0;w<(GATEWAY_ID_LEN+5);w++) in_packet[w] = LoRa.read();
+      if(in_packet[0] == (((GATEWAY_ID & 0xFF00) >> 8)) and (in_packet[1] == (GATEWAY_ID & 0x00FF)) and (in_packet[2] == EPOCH_MSG_ID))
+      {
+        epoch_received = true;
+      }
+      break;
+    }
+
+    default:
+    {
+      //Do nothing
+    }
+  }
 }

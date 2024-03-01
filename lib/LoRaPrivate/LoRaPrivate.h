@@ -7,8 +7,10 @@
 uint8 LoRaConfig(void);
 bool isChannelBusy(void);
 uint8 prepareNextPacket(void);
+uint8 askEpochTime(void);
 uint8 sendPacket(uint8* packet, uint16 packet_len);
 uint8 awaitAck(void);
+uint8 awaitEpochTimeReply(uint32 *epoch_time);
 //uint8 replyAck(void);
 void onCadDone(bool signalDetected);
 //void onTxDone(void);
