@@ -152,15 +152,13 @@ uint8 awaitEpochTimeReply(uint32* epoch_time)
   {
     epoch_received = false;
 
-    for(uint8 i = GATEWAY_ID_LEN + 1U; i < GATEWAY_ID_LEN + 5U; i++)
-    {
-      (*epoch_time) += ((uint32)in_packet[i]) << (8*(GATEWAY_ID_LEN + 4U-i));
-    }
+    (*epoch_time) = *((uint32*)(&in_packet[GATEWAY_ID_LEN + 1U])); //little endian arch
+    
     Serial.print("Received epoch time string: ");
-    printStr((uint8*)in_packet, 7U);
+    printStrHEX((uint8*)in_packet, 7U);
     Serial.println();
     Serial.print("With reconstructed epoch value: ");
-    Serial.println(*epoch_time);
+    Serial.println(*epoch_time, HEX);
     return 0;
   }
   else
