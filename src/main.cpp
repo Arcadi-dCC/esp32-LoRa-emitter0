@@ -3,10 +3,8 @@
 
 #include <LoRaPrivate.h>
 #include <customUtilities.h>
-#include <esp_sleep.h>
-#include <ESP32Time.h>
+#include <timePrivate.h>
 
-ESP32Time rtc(3600); //UTC + 1. THIS MIGHT BE RTC_DATA_ATTR?????
 RTC_DATA_ATTR bool time_configured = false;
 RTC_DATA_ATTR uint32 epoch_time = 0;
 
@@ -68,8 +66,7 @@ void setup() {
   else
   {
     (void)prepareNextPacket();
-    Serial.println("Sleeping for 2 minutes");
-    esp_deep_sleep(120*1000000); 
+    sleepFor(0, 0, 16);
   }
 }
 
