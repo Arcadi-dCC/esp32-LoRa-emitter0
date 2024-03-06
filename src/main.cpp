@@ -66,7 +66,7 @@ void setup() {
   else
   {
     (void)prepareNextPacket();
-    sleepFor(0, 0, 16);
+    sleepFor(0, 2);
   }
 }
 

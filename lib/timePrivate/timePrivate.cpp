@@ -23,7 +23,7 @@ void sleepFor(uint16 seconds, uint16 minutes, uint16 hours, uint16 days)
 
 ESP32Time rtc(3600); //UTC + 1. THIS MIGHT BE RTC_DATA_ATTR?????
 
-//Puts the MCU to sleep, and wates it up again at the specified date and time.
+//Puts the MCU to sleep, and wakes it up again at the specified date and time.
 //Returns 1 if specified date is not in the future.
 uint8 sleepUntil(int year, int month, int day, int hour, int minute, int second)
 {
