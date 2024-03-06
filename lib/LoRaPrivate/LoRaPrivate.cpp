@@ -138,7 +138,7 @@ uint8 awaitAck(void)
 //Waits for reply with epoch.
 //Blocking, with ACK_TIMEOUT.
 //Returns 0 if epoch time was received, 1 if not.
-uint8 awaitEpochTimeReply(uint32* epoch_time)
+uint8 awaitEpochTimeReply(time_t* epoch_time)
 {
   LoRa.receive();
   uint32 start_time = millis();
@@ -152,7 +152,7 @@ uint8 awaitEpochTimeReply(uint32* epoch_time)
   {
     epoch_received = false;
 
-    (*epoch_time) = *((uint32*)(&in_packet[GATEWAY_ID_LEN + 1U])); //little endian arch
+    (*epoch_time) = *((time_t*)(&in_packet[GATEWAY_ID_LEN + 1U])); //little endian arch
     
     Serial.print("Received epoch time string: ");
     printStrHEX((uint8*)in_packet, 7U);

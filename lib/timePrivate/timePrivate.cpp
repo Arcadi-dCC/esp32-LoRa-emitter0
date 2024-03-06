@@ -3,6 +3,7 @@
 #include <timePrivate.h>
 
 #include <esp_sleep.h>
+#include <ESP32Time.h>
 
 //Puts the MCU to sleep, and wates it up again after the specified amount of time has passed.
 void sleepFor(uint16 seconds, uint16 minutes, uint16 hours, uint16 days)
