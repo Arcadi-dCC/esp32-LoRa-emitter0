@@ -12,7 +12,7 @@ volatile uint8 in_packet [IN_BUFFER_SIZE];
 volatile bool Cad_isr_responded = false;
 volatile bool channel_busy = true;
 volatile bool ack_received = false;
-volatile bool epoch_received = false;
+volatile bool cldtime_received = false;
 
 //Encapsules the whole LoRa configuration. Returns 0 if successful, 1 if error.
 uint8 LoRaConfig(void)
@@ -85,11 +85,11 @@ uint8 prepareNextPacket(void)
   return 0;
 }
 
-//Sends a message to gateway asking for an update on epoch time.
-//Returns 0 if the asking is sucessful, 1 if error or channel is busy.
-uint8 askEpochTime(void)
+//Sends a message to gateway asking for an update on calendar time.
+//Returns 0 if the asking is sucessful, 1 if error, 2 if channel is busy.
+uint8 askCalendarTime(void)
 {
-  out_packet[GATEWAY_ID_LEN] = EPOCH_MSG_ID;
+  out_packet[GATEWAY_ID_LEN] = CLDTIME_MSG_ID;
   if(isChannelBusy())
   {
     out_packet[GATEWAY_ID_LEN] = EMITTER_ID;
@@ -135,32 +135,32 @@ uint8 awaitAck(void)
   }
 }
 
-//Waits for reply with epoch.
+//Waits for reply with calendar time.
 //Blocking, with ACK_TIMEOUT.
-//Returns 0 if epoch time was received, 1 if not.
-uint8 awaitEpochTimeReply(time_t* epoch_time)
+//Returns 0 if calendar time was received, 1 if not.
+uint8 awaitCalendarTimeReply(time_t* cldtime)
 {
   LoRa.receive();
   uint32 start_time = millis();
-  while((!epoch_received) and ((millis() - start_time) < EPOCH_TIMEOUT))
+  while((!cldtime_received) and ((millis() - start_time) < CLDTIME_TIMEOUT))
   {
     NOP();
   }
-  *epoch_time = 0;
+  *cldtime = 0;
   while(!LoRa.beginPacket()); //exit receive mode
-  if(epoch_received)
+  if(cldtime_received)
   {
-    epoch_received = false;
+    cldtime_received = false;
 
-    (*epoch_time) = *((time_t*)(&in_packet[GATEWAY_ID_LEN + 1U])); //little endian arch
+    (*cldtime) = *((time_t*)(&in_packet[GATEWAY_ID_LEN + 1U])); //little endian arch
     
-    Serial.print("Received epoch time string: ");
+    Serial.print("Received calendar time string: ");
     printStrHEX((uint8*)in_packet, 7U);
     Serial.println();
-    Serial.print("With reconstructed epoch value: 0x");
-    Serial.print(*epoch_time, HEX);
+    Serial.print("With reconstructed calendar time value: 0x");
+    Serial.print(*cldtime, HEX);
     Serial.print(" = DEC ");
-    Serial.println(*epoch_time);
+    Serial.println(*cldtime);
     return 0;
   }
   else
@@ -218,13 +218,13 @@ void onReceive(int packetSize)
       break;
     }
 
-    case (GATEWAY_ID_LEN + 5U): //Exact fit for epoch time message
+    case (GATEWAY_ID_LEN + 5U): //Exact fit for calendar time message
     {
-      //Reads the ID values and compares to the estabished GATEWAY_ID and EPOCH_MSG_ID
+      //Reads the ID values and compares to the estabished GATEWAY_ID and CLDTIME_MSG_ID
       for(w = 0;w<(GATEWAY_ID_LEN+5);w++) in_packet[w] = LoRa.read();
-      if(in_packet[0] == (((GATEWAY_ID & 0xFF00) >> 8)) and (in_packet[1] == (GATEWAY_ID & 0x00FF)) and (in_packet[2] == EPOCH_MSG_ID))
+      if(in_packet[0] == (((GATEWAY_ID & 0xFF00) >> 8)) and (in_packet[1] == (GATEWAY_ID & 0x00FF)) and (in_packet[2] == CLDTIME_MSG_ID))
       {
-        epoch_received = true;
+        cldtime_received = true;
       }
       break;
     }

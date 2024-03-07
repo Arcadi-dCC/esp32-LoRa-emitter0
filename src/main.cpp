@@ -5,8 +5,6 @@
 #include <customUtilities.h>
 #include <timePrivate.h>
 
-RTC_DATA_ATTR bool time_configured = false;
-
 void setup() {
  
   Serial.begin(115200);
@@ -19,40 +17,31 @@ void setup() {
   }
   delay(1000);
 
-  time_t epoch_time = 0;
-  if(!time_configured)
+  switch(timeConfigLoRa())
   {
-    delay(2000);
-    if(askEpochTime())
+    case 1U:
     {
       Serial.println("Failed to ask for updated time. Retrying in a few seconds");
       esp_deep_sleep(random(100,140)*100000);
+      break;
     }
-    else
+    case 2U:
     {
-      if(awaitEpochTimeReply(&epoch_time))
-      {
-        Serial.println("Failed to receive updated time. Retrying in a few seconds");
-        esp_deep_sleep(random(100,140)*100000);
-      }
-      else
-      {
-        timeval time_cfger;
-        time_cfger.tv_sec = epoch_time;
-        time_cfger.tv_usec = 0;
-        settimeofday(&time_cfger, NULL);
-
-        struct tm time_info;
-        while(!getLocalTime(&time_info));
-        time_configured = true;
-      }
+      Serial.println("Failed to receive updated time. Retrying in a few seconds");
+      esp_deep_sleep(random(100,140)*100000);
+      break;
+    }
+    case 3U:
+    {
+      Serial.println("Failed to update time internally.");
+      SwReset(10);
+      break;
+    }
+    default:
+    {
+      //Do nothing
     }
   }
-  setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
-  tzset();
-  time(&epoch_time);
-  Serial.print("Time is: ");
-  Serial.print(ctime(&epoch_time));
 
   //Retry in a few seconds if channel is busy
   if(isChannelBusy())
@@ -75,7 +64,7 @@ void setup() {
   else
   {
     (void)prepareNextPacket();
-    sleepFor(20);
+    sleepFor(30);
   }
 }
 
