@@ -157,8 +157,10 @@ uint8 awaitEpochTimeReply(time_t* epoch_time)
     Serial.print("Received epoch time string: ");
     printStrHEX((uint8*)in_packet, 7U);
     Serial.println();
-    Serial.print("With reconstructed epoch value: ");
-    Serial.println(*epoch_time, HEX);
+    Serial.print("With reconstructed epoch value: 0x");
+    Serial.print(*epoch_time, HEX);
+    Serial.print(" = DEC ");
+    Serial.println(*epoch_time);
     return 0;
   }
   else

@@ -3,7 +3,6 @@
 #include <timePrivate.h>
 
 #include <esp_sleep.h>
-#include <ESP32Time.h>
 
 //Puts the MCU to sleep, and wates it up again after the specified amount of time has passed.
 void sleepFor(uint16 seconds, uint16 minutes, uint16 hours, uint16 days)
@@ -22,24 +21,30 @@ void sleepFor(uint16 seconds, uint16 minutes, uint16 hours, uint16 days)
   esp_deep_sleep(total_time_us);
 }
 
-ESP32Time rtc(3600); //UTC + 1. THIS MIGHT BE RTC_DATA_ATTR?????
-
 //Puts the MCU to sleep, and wakes it up again at the specified date and time.
 //Returns 1 if specified date is not in the future.
 uint8 sleepUntil(int year, int month, int day, int hour, int minute, int second)
 {
-  uint32 current_epoch = rtc.getLocalEpoch(); //save current epoch, without offset
-  uint32 c_offset_epoch = rtc.getEpoch(); //save current epoch, with the offset of our timezone
+  struct tm wakeup_date;
 
-  //get wakeup epoch
-  rtc.setTime(second, minute, hour, day, month, year);
-  uint32 wakeup_epoch = rtc.getLocalEpoch(); //save wakeup epoch, without offset in respect to the time set just above
+  wakeup_date.tm_year = year - 1900;
+  wakeup_date.tm_mon = month - 1;
+  wakeup_date.tm_mday = day;
+  wakeup_date.tm_hour = hour;
+  wakeup_date.tm_min = minute;
+  wakeup_date.tm_sec = second;
+  wakeup_date.tm_isdst = -1;
 
-  rtc.setTime(current_epoch); //restore current time
+  time_t wakeup_epoch = mktime(&wakeup_date);
+  time_t current_epoch;
+  time(&current_epoch);
 
-  if (wakeup_epoch > c_offset_epoch)
+  if (wakeup_epoch > current_epoch)
   {
-    uint64 total_time_us = ((uint64)(wakeup_epoch - c_offset_epoch)) * 1000000;
+    uint64 total_time_us = ((uint64)(wakeup_epoch - current_epoch)) * 1000000U;
+    Serial.print("Waking up on ");
+    Serial.print(asctime(&wakeup_date));
+
     Serial.print("Sleeping for ");
     Serial.print(total_time_us / 1000000U);
     Serial.println(" s");
@@ -47,6 +52,7 @@ uint8 sleepUntil(int year, int month, int day, int hour, int minute, int second)
   }
   else
   {
+    Serial.println("Wake up date is not in the future");
     return 1;
   }
 }

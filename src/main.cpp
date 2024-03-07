@@ -6,7 +6,6 @@
 #include <timePrivate.h>
 
 RTC_DATA_ATTR bool time_configured = false;
-time_t epoch_time = 0;
 
 void setup() {
  
@@ -20,8 +19,10 @@ void setup() {
   }
   delay(1000);
 
+  time_t epoch_time = 0;
   if(!time_configured)
   {
+    delay(2000);
     if(askEpochTime())
     {
       Serial.println("Failed to ask for updated time. Retrying in a few seconds");
@@ -43,17 +44,15 @@ void setup() {
 
         struct tm time_info;
         while(!getLocalTime(&time_info));
-
-        setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
-        tzset();
         time_configured = true;
       }
     }
   }
-  Serial.println();
-  Serial.print("Configured time: ");
+  setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
+  tzset();
   time(&epoch_time);
-  Serial.println(ctime(&epoch_time));
+  Serial.print("Time is: ");
+  Serial.print(ctime(&epoch_time));
 
   //Retry in a few seconds if channel is busy
   if(isChannelBusy())
@@ -76,7 +75,7 @@ void setup() {
   else
   {
     (void)prepareNextPacket();
-    sleepFor(30);
+    sleepFor(20);
   }
 }
 
