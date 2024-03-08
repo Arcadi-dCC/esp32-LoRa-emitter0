@@ -17,30 +17,10 @@ void setup() {
   }
   delay(1000);
 
-  switch(timeConfigLoRa())
+  if(timeConfigLoRa())
   {
-    case 1U:
-    {
-      Serial.println("Failed to ask for updated time. Retrying in a few seconds");
-      esp_deep_sleep(random(100,140)*100000);
-      break;
-    }
-    case 2U:
-    {
-      Serial.println("Failed to receive updated time. Retrying in a few seconds");
-      esp_deep_sleep(random(100,140)*100000);
-      break;
-    }
-    case 3U:
-    {
-      Serial.println("Failed to update time internally.");
-      SwReset(10);
-      break;
-    }
-    default:
-    {
-      //Do nothing
-    }
+    Serial.println("Retrying in a few seconds");
+    esp_deep_sleep(random(100,140)*100000);
   }
 
   //Retry in a few seconds if channel is busy

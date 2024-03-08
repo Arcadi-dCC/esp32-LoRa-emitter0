@@ -20,11 +20,13 @@ uint8 timeConfigLoRa(void)
   {
     if(askCalendarTime())
     {
+      Serial.println("Failed to ask for updated time.");
       return 1U;
     }
 
     if(awaitCalendarTimeReply(&cldtime))
     {
+      Serial.println("Failed to receive updated time.");
       return 2U;
     }
 
@@ -36,6 +38,7 @@ uint8 timeConfigLoRa(void)
 
     if(!getLocalTime(&time_info, TCUPD_TIMEOUT))
     {
+      Serial.println("Failed to update time internally.");
       return 3U;
     }
     
@@ -51,7 +54,7 @@ uint8 timeConfigLoRa(void)
   return 0U;
 }
 
-//Puts the MCU to sleep, and wates it up again after the specified amount of time has passed.
+//Puts the MCU to sleep, and wakes it up again after the specified amount of time has passed.
 void sleepFor(uint16 seconds, uint16 minutes, uint16 hours, uint16 days)
 {
   uint64 total_time_us = 0;
