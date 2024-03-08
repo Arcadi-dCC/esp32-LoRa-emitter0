@@ -3,7 +3,7 @@
 
 #include <LoRaPrivate.h>
 #include <customUtilities.h>
-#include <esp_sleep.h>
+#include <timePrivate.h>
 
 void setup() {
  
@@ -16,6 +16,12 @@ void setup() {
     SwReset(10);
   }
   delay(1000);
+
+  if(timeConfigLoRa())
+  {
+    Serial.println("Retrying in a few seconds");
+    esp_deep_sleep(random(100,140)*100000);
+  }
 
   //Retry in a few seconds if channel is busy
   if(isChannelBusy())
@@ -38,8 +44,7 @@ void setup() {
   else
   {
     (void)prepareNextPacket();
-    Serial.println("Sleeping for 2 minutes");
-    esp_deep_sleep(120*1000000); 
+    sleepFor(30);
   }
 }
 
