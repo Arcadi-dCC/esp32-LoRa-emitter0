@@ -44,7 +44,26 @@ void setup() {
   else
   {
     (void)prepareNextPacket();
-    sleepFor(30);
+    (void)checkTimeUpdate();
+
+    struct tm time_info;
+
+    if(!getLocalTime(&time_info))
+    {
+      (void)sleepFor(0, 5);
+    }
+    if(time_info.tm_hour == 23)
+    {
+      (void)sleepUntil(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday + 1, 8, 0, 0);
+    }
+    else
+    {
+      (void)sleepFor(30);
+    }
+
+
+    
+    
   }
 }
 

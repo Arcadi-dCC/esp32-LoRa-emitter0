@@ -7,6 +7,7 @@
 #include <esp_sleep.h>
 
 RTC_DATA_ATTR bool time_configured = false;
+RTC_DATA_ATTR time_t last_updated;
 
 //On the first run, asks the gateway for the current calendar time via LoRa, and then updates the emitter clock internally.
 //After the first run, updates timezone info and shows the time.
@@ -14,7 +15,6 @@ RTC_DATA_ATTR bool time_configured = false;
 //Returns 0 if successful, 1 if emitter could not ask for calendar time, 2 if gateway did not respond to the petition, 3 if time config API failed internally.
 uint8 timeConfigLoRa(void)
 {
-  time_t cldtime = 0;
 
   if(!time_configured)
   {
@@ -24,14 +24,14 @@ uint8 timeConfigLoRa(void)
       return 1U;
     }
 
-    if(awaitCalendarTimeReply(&cldtime))
+    if(awaitCalendarTimeReply(&last_updated))
     {
       Serial.println("Failed to receive updated time.");
       return 2U;
     }
 
     timeval time_cfger;
-    time_cfger.tv_sec = cldtime;
+    time_cfger.tv_sec = last_updated;
     time_cfger.tv_usec = 0;
     settimeofday(&time_cfger, NULL);
     struct tm time_info;
@@ -47,11 +47,30 @@ uint8 timeConfigLoRa(void)
 
   setenv("TZ", TZ_INFO, 1);
   tzset();
+  time_t cldtime;
   time(&cldtime);
   Serial.print("Time is: ");
   Serial.print(ctime(&cldtime));
 
   return 0U;
+}
+
+//Looks up the last calendar time that time was updated and compares with current calendar time.
+//If the difference is greater than TUPD_PERIOD, it clears global variable time_configured to update time via LoRa on next wakeup.
+//Returns 0 if update was not necessary, 1 if time will be updated after the sleep period. 
+uint8 checkTimeUpdate(void)
+{
+  time_t now;
+  time(&now);
+  if(now - last_updated < TUPD_PERIOD)
+  {
+    return 0U;
+  }
+  else
+  {
+    time_configured = false;
+    return 1U;
+  }
 }
 
 //Puts the MCU to sleep, and wakes it up again after the specified amount of time has passed.
