@@ -57,24 +57,19 @@ void setup() {
   {
     sent_OK = true;
 
-    pinMode(2, OUTPUT);
-    digitalWrite(2, HIGH);
-    delay(1000);
-    digitalWrite(2, LOW);
-
     struct tm time_info;
 
     if(!getLocalTime(&time_info))
     {
-      (void)sleepFor(0, 5);
+      (void)sleepFor(0, 1);
     }
-    if(time_info.tm_hour == 8)
-    {
-      (void)sleepUntil(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, 10, 0, 0); //do not send from 8 AM to 10 AM.
-    }
+    //if(time_info.tm_hour == 8)
+    //{
+    //  (void)sleepUntil(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, 10, 0, 0); //do not send from 8 AM to 10 AM.
+    //}
     else
     {
-      (void)sleepFor(0, 5);
+      (void)sleepFor(0, 1);
     }
   }
 }
