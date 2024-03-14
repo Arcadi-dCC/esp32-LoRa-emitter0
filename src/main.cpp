@@ -5,6 +5,8 @@
 #include <customUtilities.h>
 #include <timePrivate.h>
 
+RTC_DATA_ATTR bool sent_OK = true;
+
 void setup() {
  
   Serial.begin(115200);
@@ -17,34 +19,63 @@ void setup() {
   }
   delay(1000);
 
+  (void)checkTimeUpdate();
+
   if(timeConfigLoRa())
   {
     Serial.println("Retrying in a few seconds");
     esp_deep_sleep(random(100,140)*100000);
   }
 
+  if(sent_OK)
+  {
+    (void)prepareNextPacket();
+  }
+
   //Retry in a few seconds if channel is busy
   if(isChannelBusy())
   {
+    sent_OK = false;
     Serial.println("Channel is busy. Retrying in a few seconds");
     esp_deep_sleep(random(100,140)*100000);
   }
 
   if(sendPacket(out_packet, sizeof(out_packet)))
   {
+    sent_OK = false;
     Serial.println("Failed to send packet. Retrying in a few seconds");
     esp_deep_sleep(random(100,140)*100000);
   }
   
   if(awaitAck())
   {
+    sent_OK = false;
     Serial.println("Acknowledgement not received. Retrying in a few seconds");
     esp_deep_sleep(random(100,140)*100000);
   }
   else
   {
-    (void)prepareNextPacket();
-    sleepFor(30);
+    sent_OK = true;
+
+    pinMode(2, OUTPUT);
+    digitalWrite(2, HIGH);
+    delay(1000);
+    digitalWrite(2, LOW);
+
+    struct tm time_info;
+
+    if(!getLocalTime(&time_info))
+    {
+      (void)sleepFor(0, 5);
+    }
+    if(time_info.tm_hour == 8)
+    {
+      (void)sleepUntil(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, 10, 0, 0); //do not send from 8 AM to 10 AM.
+    }
+    else
+    {
+      (void)sleepFor(0, 5);
+    }
   }
 }
 

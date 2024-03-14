@@ -6,7 +6,7 @@
 #include <LoRa.h>
 #include <customUtilities.h>
 
-RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 69, 0}; //Final items: data id, data
+RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 69, 0, 0}; //Final items: data id, data0, data1
 volatile uint8 in_packet [IN_BUFFER_SIZE];
 
 volatile bool Cad_isr_responded = false;
@@ -80,8 +80,14 @@ uint8 prepareNextPacket(void)
   }while(out_packet[GATEWAY_ID_LEN + 1U] == old_data_id);
   
   //introduce the new value
-  out_packet[GATEWAY_ID_LEN + 2U] = (out_packet[GATEWAY_ID_LEN + 2U] + 1 ) % 32;
+  uint16 an_val = analogRead(13);
+  uint8* p_an_val = (uint8*)(&an_val);
+  out_packet[GATEWAY_ID_LEN + 2U] = p_an_val[0];
+  out_packet[GATEWAY_ID_LEN + 3U] = p_an_val[1];
 
+  Serial.print("Read new value: ");
+  Serial.println(an_val);
+  
   return 0;
 }
 
