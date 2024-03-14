@@ -7,11 +7,11 @@
 #include <esp_sleep.h>
 
 RTC_DATA_ATTR bool time_configured = false;
-RTC_DATA_ATTR time_t last_updated;
+RTC_DATA_ATTR time_t last_updated = 0;
 
 //On the first run, asks the gateway for the current calendar time via LoRa, and then updates the emitter clock internally.
 //After the first run, updates timezone info and shows the time.
-//Time can be reconigured after a wakeup by setting time_configured variable to false before going to sleep.
+//Time can be reconfigured after a wakeup by setting time_configured variable to false before going to sleep.
 //Returns 0 if successful, 1 if emitter could not ask for calendar time, 2 if gateway did not respond to the petition, 3 if time config API failed internally.
 uint8 timeConfigLoRa(void)
 {
