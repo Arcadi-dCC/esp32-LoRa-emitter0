@@ -65,7 +65,7 @@ void setup() {
     }
     //if(time_info.tm_hour == 8)
     //{
-    //  (void)sleepUntil(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, 10, 0, 0); //do not send from 8 AM to 10 AM.
+    //  (void)sleepUntil(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, 17, 0, 0); //do not send from 8 AM to 5 PM.
     //}
     else
     {

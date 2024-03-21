@@ -27,7 +27,7 @@
 #define OUT_BUFFER_SIZE     GATEWAY_ID_LEN + 4U     //Bytes per packet that will be sent
 #define IN_BUFFER_SIZE      255U                    //Maximum number of bytes per input packet
 
-#define ACK_TIMEOUT         5000U                   //Acknowledgment timeout (ms)
-#define CLDTIME_TIMEOUT     5000U                   //Calendar time reply timeout (ms)
+#define ACK_TIMEOUT         20000U                   //Acknowledgment timeout (ms)
+#define CLDTIME_TIMEOUT     20000U                   //Calendar time reply timeout (ms)
 
 #endif //LoRaCfg_H
