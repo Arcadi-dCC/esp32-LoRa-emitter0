@@ -61,7 +61,7 @@ void setup() {
 
     if(!getLocalTime(&time_info))
     {
-      (void)sleepFor(0, 1);
+      (void)sleepFor(15);
     }
     //if(time_info.tm_hour == 8)
     //{
@@ -69,7 +69,7 @@ void setup() {
     //}
     else
     {
-      (void)sleepFor(0, 1);
+      (void)sleepFor(15);
     }
   }
 }
