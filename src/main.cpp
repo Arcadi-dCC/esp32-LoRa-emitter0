@@ -61,15 +61,15 @@ void setup() {
 
     if(!getLocalTime(&time_info))
     {
-      (void)sleepFor(15);
+      (void)sleepFor(0, 5);
     }
-    //if(time_info.tm_hour == 8)
-    //{
-    //  (void)sleepUntil(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, 17, 0, 0); //do not send from 8 AM to 5 PM.
-    //}
+    if(time_info.tm_hour == 8)
+    {
+      (void)sleepUntil(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, 17, 0, 0); //do not send from 8 AM to 5 PM.
+    }
     else
     {
-      (void)sleepFor(15);
+      (void)sleepFor(0, 5);
     }
   }
 }

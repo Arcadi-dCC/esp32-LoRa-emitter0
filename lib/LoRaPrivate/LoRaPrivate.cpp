@@ -31,13 +31,12 @@ uint8 LoRaConfig(void)
   
   LoRa.setSpreadingFactor(SPR_FACT);
   LoRa.setSignalBandwidth(BANDWIDTH);
-  //LoRa.setTxPower(TX_POWER);
-  //LoRa.setGain(LNA_GAIN);
-  //LoRa.setCodingRate4(CR_DEN);
+  LoRa.setTxPower(TX_POWER);
+  LoRa.setGain(LNA_GAIN);
+  LoRa.setCodingRate4(CR_DEN);
   //LoRa.setPreambleLength(PREAM_LEN);
   //LoRa.enableInvertIQ();
   //LoRa.setSyncWord(SYNC_WORD);
-  LoRa.enableCrc();
 
   LoRa.onCadDone(onCadDone); //call onCadDone ISR when channel activity detection has finished
   //LoRa.onTxDone(onTxDone); //call onTxDone ISR when packet has been fully sent
@@ -173,31 +172,6 @@ uint8 awaitCalendarTimeReply(time_t* cldtime)
     return 1;
   }
 }
-
-/* NOT USABLE IN EMITTER
-//Sends a small packet with GATEWAY_ID and the EMITTER_ID received through LoRa.
-//Blocking: Waits for the channel to be available, with ACK_TIMEOUT.
-//Returns 0 if successful, 1 if error.
-uint8 replyAck(void)
-{
-  uint8 err_reg = 1;
-  while(!LoRa.beginPacket()); //exit receive mode
-
-  uint32 start_time = millis();
-  do
-  {
-    err_reg = (uint8)isChannelBusy();
-  } while(err_reg and ((millis() - start_time) < ACK_TIMEOUT));
-
-  if(!err_reg)
-  {
-    uint8 out_packet[3] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, in_packet[GATEWAY_ID_LEN]};
-    err_reg = sendPacket(out_packet, sizeof(out_packet));
-  }
-
-  LoRa.receive(); //reenter receive mode
-  return err_reg;
-}*/
 
 /* NOT USED
 //ISR called when the sending of data is finished.
