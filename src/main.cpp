@@ -4,6 +4,7 @@
 #include <LoRaPrivate.h>
 #include <customUtilities.h>
 #include <timePrivate.h>
+#include <collection.h>
 
 RTC_DATA_ATTR bool sent_OK = true;
 
@@ -25,6 +26,11 @@ void setup() {
   {
     Serial.println("Retrying in a few seconds");
     esp_deep_sleep(random(100,140)*100000);
+  }
+
+  if(scheduleConfig())
+  {
+    Serial.println("Schedule has bad parsing. Check it in lib/collection/collectionCfg.h");
   }
 
   if(sent_OK)
