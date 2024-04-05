@@ -33,6 +33,87 @@ void setup() {
     Serial.println("Schedule has bad parsing. Check it in lib/collection/collectionCfg.h");
   }
 
+  //TODO: go to sleep if scheduled collection end has been reached.
+  struct tm now;
+  if(!getLocalTime(&now))
+  {
+    (void)sleepFor(30);
+  }
+
+  bool after_end = false, before_start = false;
+
+  if(now.tm_hour > schedule.end.hour)
+  {
+    after_end = true;
+  }
+  else if(now.tm_hour == schedule.end.hour)
+  {
+    if(now.tm_min > schedule.end.minute)
+    {
+      after_end = true;
+    }
+    else if(now.tm_min == schedule.end.minute)
+    {
+      if(now.tm_sec >= schedule.end.second)
+      {
+        after_end = true;
+      }
+    }
+  }
+
+  if(now.tm_hour < schedule.start.hour)
+  {
+    before_start = true;
+  }
+  else if(now.tm_hour == schedule.start.hour)
+  {
+    if(now.tm_min < schedule.start.minute)
+    {
+      before_start = true;
+    }
+    else if(now.tm_min == schedule.start.minute)
+    {
+      if(now.tm_sec < schedule.start.second)
+      {
+        before_start = true;
+      }
+    }
+  }
+
+  sint8 days_of_sleep = 0;
+
+  if(schedule.active_at_midnight)
+  {
+    if(after_end and before_start)
+    {
+      while(!schedule.week_days[(now.tm_wday + days_of_sleep) % 7U])
+      {
+        days_of_sleep++;
+      }
+      (void)sleepUntil(now.tm_year + 1900, now.tm_mon + 1, now.tm_mday + days_of_sleep, schedule.start.hour, schedule.start.minute, schedule.start.second);
+    }
+  }
+  else
+  {
+    if(after_end)
+    {
+      days_of_sleep++;
+      while(!schedule.week_days[(now.tm_wday + days_of_sleep) % 7U])
+      {
+        days_of_sleep++;
+      }
+      (void)sleepUntil(now.tm_year + 1900, now.tm_mon + 1, now.tm_mday + days_of_sleep, schedule.start.hour, schedule.start.minute, schedule.start.second);
+    }
+    if(before_start)
+    {
+      while(!schedule.week_days[(now.tm_wday + days_of_sleep) % 7U])
+      {
+        days_of_sleep++;
+      }
+      (void)sleepUntil(now.tm_year + 1900, now.tm_mon + 1, now.tm_mday + days_of_sleep, schedule.start.hour, schedule.start.minute, schedule.start.second);
+    }
+  }
+
   if(sent_OK)
   {
     (void)prepareNextPacket();
@@ -63,20 +144,23 @@ void setup() {
   {
     sent_OK = true;
 
-    struct tm time_info;
+    if(!getLocalTime(&now))
+    {
+      (void)sleepFor(30);
+    }
 
-    if(!getLocalTime(&time_info))
+    //if garbage collection ends early in the morning, count one day less of sleep
+    if(!schedule.active_at_midnight)
     {
-      (void)sleepFor(0, 5);
+      days_of_sleep++;
     }
-    if(time_info.tm_hour == 8)
+    
+    while(!schedule.week_days[(now.tm_wday + days_of_sleep) % 7U])
     {
-      (void)sleepUntil(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, 17, 0, 0); //do not send from 8 AM to 5 PM.
+      days_of_sleep++;
     }
-    else
-    {
-      (void)sleepFor(0, 5);
-    }
+
+    (void)sleepUntil(now.tm_year + 1900, now.tm_mon + 1, now.tm_mday + days_of_sleep, schedule.start.hour, schedule.start.minute, schedule.start.second);
   }
 }
 

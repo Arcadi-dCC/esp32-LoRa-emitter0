@@ -13,6 +13,7 @@ struct Schedule
     Simple_time start;
     Simple_time end;
     uint8 week_days[7];
+    bool active_at_midnight;
 };
 
 uint8 scheduleConfig(void);

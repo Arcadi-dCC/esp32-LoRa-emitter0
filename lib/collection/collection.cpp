@@ -134,5 +134,27 @@ uint8 scheduleConfig(void)
             schedule.week_days[day]++;
         }
     }
+
+    //Check if collection is happenning at midnight
+    schedule.active_at_midnight = true;
+    if(schedule.end.hour > schedule.start.hour)
+    {
+      schedule.active_at_midnight = false;
+    }
+    else if(schedule.end.hour == schedule.start.hour)
+    {
+      if(schedule.end.minute > schedule.start.minute)
+      {
+        schedule.active_at_midnight = false;
+      }
+      else if(schedule.end.minute == schedule.start.minute)
+      {
+        if(schedule.end.second >= schedule.start.second)
+        {
+          schedule.active_at_midnight = false;
+        }
+      }
+    }
+
     return 0;
 }
