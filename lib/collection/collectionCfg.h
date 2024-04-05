@@ -8,8 +8,4 @@
 
 #define COLLECTION_DAYS     "MTWRF"     //Place the collection days: (M)onday, (T)uesday, (W)ednesday, thu(R)sday, (F)riday, (S)aturday, sun(D)ay
 
-#define TOTAL_BINS 7U
-
-extern uint16 bins[TOTAL_BINS][2U];
-
 #endif //collectionCfg_H
