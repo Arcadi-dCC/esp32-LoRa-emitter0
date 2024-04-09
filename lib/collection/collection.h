@@ -17,6 +17,10 @@ struct Schedule
 };
 
 uint8 scheduleConfig(void);
+bool isInstantBeforeReference(Simple_time instant, Simple_time reference);
+uint8 sleepManager(tm tm_now, int extra_day_sleep);
+uint8 outOfScheduleManager(void);
+uint8 finishedTodaysJobManager(void);
 
 extern Schedule schedule;
 
