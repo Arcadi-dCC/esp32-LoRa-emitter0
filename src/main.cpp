@@ -5,6 +5,7 @@
 #include <customUtilities.h>
 #include <timePrivate.h>
 #include <collection.h>
+#include <AJ-SR04M_Drv.h>
 
 void setup() {
  
@@ -15,6 +16,13 @@ void setup() {
   if(scheduleConfig())
   {
     Serial.println("Schedule has bad parsing. Check it in lib/collection/collectionCfg.h");
+    (void)sleepFor(0, 0, 0, 0xFFFF);
+  }
+
+  if(AJ_SR04M_Config())
+  {
+    Serial.println("Selected mode of operation for distance sensor is not implemented.");
+    Serial.println("Check OP_MODE in lib/AJ-SR04M_Drv/AJ-SR04M_Cfg.h");
     (void)sleepFor(0, 0, 0, 0xFFFF);
   }
 
@@ -51,7 +59,10 @@ void setup() {
     }
   }
 
- (void)prepareNextPacket();
+  if(prepareNextPacket())
+  {
+    Serial.println("Sending old distance value since sensor did not respond.");
+  }
 
   //Retry in a few seconds if channel is busy
   if(isChannelBusy())

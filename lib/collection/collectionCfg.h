@@ -6,4 +6,6 @@
 
 #define COLLECTION_DAYS     "MTWRF"     //Place the collection days: sun(D)ay, (M)onday, (T)uesday, (W)ednesday, thu(R)sday, (F)riday, (S)aturday
 
+#define CONTAINER_HEIGHT    150U        //Height of garbage container [cm]
+
 #endif //collectionCfg_H

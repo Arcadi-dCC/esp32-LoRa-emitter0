@@ -6,7 +6,7 @@
 #include <timePrivate.h>
 
 RTC_DATA_ATTR Schedule schedule;
-RTC_DATA_ATTR uint8 schedule_configured = false;
+RTC_DATA_ATTR bool schedule_configured = false;
 
 //Receives a string in hh:mm:ss format and stores the value in the schedule struct.
 uint8 stringTimeToSimpleTime(const char* string_time, Simple_time *simple_time)
@@ -141,10 +141,10 @@ uint8 scheduleConfig(void)
             }
             schedule.week_days[day]++;
         }
-    }
 
-    //Check if collection is happenning at midnight
-    schedule.active_at_midnight = isInstantBeforeReference(schedule.end, schedule.start);
+        //Check if collection is happenning at midnight
+        schedule.active_at_midnight = isInstantBeforeReference(schedule.end, schedule.start);
+    }
 
     return 0;
 }
