@@ -6,8 +6,9 @@
 #include <LoRa.h>
 #include <customUtilities.h>
 #include <AJ-SR04M_Drv.h>
+#include <collectionCfg.h>
 
-RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 69, 0, 0}; //Final items: data id, data0, data1
+RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 69, 0}; //Final items: data id, data
 volatile uint8 in_packet [IN_BUFFER_SIZE];
 
 volatile bool Cad_isr_responded = false;
@@ -87,16 +88,21 @@ uint8 prepareNextPacket(void)
     out_packet[GATEWAY_ID_LEN + 1U] = (uint8)random(0xFF);
   }while(out_packet[GATEWAY_ID_LEN + 1U] == old_data_id);
 
+  //Get distance and convert it to fullness (%)
   static uint16 distance = 0U;
   uint8 r_distance = AJ_SR04M_Distance(&distance);
+  float32 percentage = (1 - ((float32)distance / (float32)BIN_HEIGHT)) * 100;
+  if(percentage > 100)
+  {
+    percentage = 100;
+  }
+  uint8 fullness = percentage + 0.5;
 
   //insert the value in out_packet
-  uint8* p_distance = (uint8*)(&distance);
-  out_packet[GATEWAY_ID_LEN + 2U] = p_distance[0];
-  out_packet[GATEWAY_ID_LEN + 3U] = p_distance[1];
+  out_packet[GATEWAY_ID_LEN + 2U] = fullness;
   
   Serial.print("Read new value: ");
-  Serial.println(distance);
+  Serial.println(fullness);
   
   return r_distance;
 }
