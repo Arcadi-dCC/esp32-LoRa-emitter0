@@ -5,8 +5,10 @@
 #include <SPI.h>
 #include <LoRa.h>
 #include <customUtilities.h>
+#include <AJ-SR04M_Drv.h>
+#include <collectionCfg.h>
 
-RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 69, 0, 0}; //Final items: data id, data0, data1
+RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 69, 0}; //Final items: data id, data
 volatile uint8 in_packet [IN_BUFFER_SIZE];
 
 volatile bool Cad_isr_responded = false;
@@ -73,7 +75,10 @@ void onCadDone(bool signalDetected) //true menas signal is detected
   Cad_isr_responded = true;
 }
 
-//Prepares the packet with the data to send next. Returns 0 if successful, 1 if error.
+//Prepares the packet with the data to send next.
+//Preparing data includes checking distance sensor configuration and measuring distance.
+//[Blocking]. Max blocking time = 1s
+//Returns 0 if successful, 1 if sensor not configured correctly, 2 if sensor did not respond.
 uint8 prepareNextPacket(void)
 {
   //establish a new random data ID
@@ -83,16 +88,23 @@ uint8 prepareNextPacket(void)
     out_packet[GATEWAY_ID_LEN + 1U] = (uint8)random(0xFF);
   }while(out_packet[GATEWAY_ID_LEN + 1U] == old_data_id);
 
-  //insert the new value in out_packet
-  uint16 an_val = analogRead(13);
-  uint8* p_an_val = (uint8*)(&an_val);
-  out_packet[GATEWAY_ID_LEN + 2U] = p_an_val[0];
-  out_packet[GATEWAY_ID_LEN + 3U] = p_an_val[1];
+  //Get distance and convert it to fullness (%)
+  static uint16 distance = 0U;
+  uint8 r_distance = AJ_SR04M_Distance(&distance);
+  float32 percentage = (1 - ((float32)distance / (float32)BIN_HEIGHT)) * 100;
+  if(percentage > 100)
+  {
+    percentage = 100;
+  }
+  uint8 fullness = percentage + 0.5;
+
+  //insert the value in out_packet
+  out_packet[GATEWAY_ID_LEN + 2U] = fullness;
   
   Serial.print("Read new value: ");
-  Serial.println(an_val);
+  Serial.println(fullness);
   
-  return 0;
+  return r_distance;
 }
 
 //Sends a message to gateway asking for an update on calendar time.

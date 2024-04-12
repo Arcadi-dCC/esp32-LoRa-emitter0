@@ -24,7 +24,7 @@
 #define GATEWAY_ID_LEN      2U                      //Number of bytes that compose the gateway ID
 #define CLDTIME_MSG_ID      0xFF                    //ID that defines a time update message
 
-#define OUT_BUFFER_SIZE     GATEWAY_ID_LEN + 4U     //Bytes per packet that will be sent
+#define OUT_BUFFER_SIZE     GATEWAY_ID_LEN + 3U     //Bytes per packet that will be sent
 #define IN_BUFFER_SIZE      255U                    //Maximum number of bytes per input packet
 
 #define ACK_TIMEOUT         10000U                   //Acknowledgment timeout (ms)
