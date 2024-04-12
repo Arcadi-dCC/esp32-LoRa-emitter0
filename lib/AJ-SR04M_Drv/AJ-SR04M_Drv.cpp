@@ -13,13 +13,20 @@ uint8 AJ_SR04M_Config(void)
     if(!AJ_SR04M_configured)
     {
         AJ_SR04M_configured = true;
-        if(OP_MODE != 2U)
+        switch (OP_MODE)
         {
-            return 1U;
+            case (2U):
+            {
+                pinMode(TRIG_PIN, OUTPUT);
+                pinMode(ECHO_PIN, INPUT);
+                digitalWrite(TRIG_PIN, LOW);
+                break;
+            }
+            default:
+            {
+                return 1U;
+            }
         }
-        pinMode(TRIG_PIN, OUTPUT);
-        pinMode(ECHO_PIN, INPUT);
-        digitalWrite(TRIG_PIN, LOW);
     }
     return 0U;
 }
@@ -59,4 +66,3 @@ uint8 AJ_SR04M_Distance(uint16* distance)
     }
     return 0U;
 }
- 
