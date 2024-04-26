@@ -11,7 +11,7 @@
 */
 #define OP_MODE     2U      //Mode of operation
 
-#define TRIG_PIN    12U     //Trigger pin
-#define ECHO_PIN    33U     //Echo pin
+#define TRIG_PIN    25U     //Trigger pin
+#define ECHO_PIN    4U      //Echo pin
 
 #endif //AJ_SR04M_Cfg_H

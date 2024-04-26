@@ -89,20 +89,24 @@ uint8 prepareNextPacket(void)
   }while(out_packet[GATEWAY_ID_LEN + 1U] == old_data_id);
 
   //Get distance and convert it to fullness (%)
-  static uint16 distance = 0U;
+  RTC_DATA_ATTR static uint16 distance = 0U;
   uint8 r_distance = AJ_SR04M_Distance(&distance);
-  float32 percentage = (1 - ((float32)distance / (float32)BIN_HEIGHT)) * 100;
-  if(percentage > 100)
+
+  if(distance > BIN_HEIGHT) //if this happens, trash is less than 20cm away from the sensor
   {
-    percentage = 100;
+    distance = 0U;
   }
+  float32 percentage = (1 - ((float32)distance / (float32)BIN_HEIGHT)) * 100;
+  
   uint8 fullness = percentage + 0.5;
 
   //insert the value in out_packet
   out_packet[GATEWAY_ID_LEN + 2U] = fullness;
   
   Serial.print("Read new value: ");
-  Serial.println(fullness);
+  Serial.print(fullness);
+  Serial.print("% ");
+  Serial.println(distance);
   
   return r_distance;
 }
