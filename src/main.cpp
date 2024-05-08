@@ -39,7 +39,7 @@ void setup() {
 
   if(timeConfigLoRa())
   {
-    Serial.println("Failed to receive updated time. Retrying in a few seconds");
+    Serial.println("Retrying in a few seconds");
     esp_deep_sleep(random(MIN_RETRY_DELAY,MAX_RETRY_DELAY)*1000U);
   }
 
