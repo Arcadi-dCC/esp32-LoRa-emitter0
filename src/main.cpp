@@ -7,6 +7,9 @@
 #include <collection.h>
 #include <AJ-SR04M_Drv.h>
 
+#define MIN_RETRY_DELAY 10000U //ms
+#define MAX_RETRY_DELAY 15000U //ms
+
 void setup() {
  
   Serial.begin(115200);
@@ -36,8 +39,8 @@ void setup() {
 
   if(timeConfigLoRa())
   {
-    Serial.println("Retrying in a few seconds");
-    esp_deep_sleep(random(100,140)*100000);
+    Serial.println("Failed to receive updated time. Retrying in a few seconds");
+    esp_deep_sleep(random(MIN_RETRY_DELAY,MAX_RETRY_DELAY)*1000U);
   }
 
   switch(outOfScheduleManager())
@@ -68,19 +71,21 @@ void setup() {
   if(isChannelBusy())
   {
     Serial.println("Channel is busy. Retrying in a few seconds");
-    esp_deep_sleep(random(100,140)*100000);
+    esp_deep_sleep(random(MIN_RETRY_DELAY,MAX_RETRY_DELAY)*1000U);
   }
 
+  //Retry in a few seconds if failed to send packet
   if(sendPacket(out_packet, sizeof(out_packet)))
   {
     Serial.println("Failed to send packet. Retrying in a few seconds");
-    esp_deep_sleep(random(100,140)*100000);
+    esp_deep_sleep(random(MIN_RETRY_DELAY,MAX_RETRY_DELAY)*1000U);
   }
   
+  //Retry in a few seconds if acknowledgement was not received
   if(awaitAck())
   {
     Serial.println("Acknowledgement not received. Retrying in a few seconds");
-    esp_deep_sleep(random(100,140)*100000);
+    esp_deep_sleep(random(MIN_RETRY_DELAY,MAX_RETRY_DELAY)*1000U);
   }
   else
   {
