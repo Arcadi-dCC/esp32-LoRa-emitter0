@@ -4,10 +4,12 @@
 #include <collectionCfg.h>
 
 #include <timePrivate.h>
+#include <LoRaCfg.h>
 
 RTC_DATA_ATTR Schedule schedule;
 RTC_DATA_ATTR bool schedule_configured = false;
 
+//DEPRECATED: tableTimeToSimpleTime() is used now
 //Receives a string in hh:mm:ss format and stores the value in the schedule struct.
 uint8 stringTimeToSimpleTime(const char* string_time, Simple_time *simple_time)
 {
@@ -59,19 +61,55 @@ uint8 stringTimeToSimpleTime(const char* string_time, Simple_time *simple_time)
     return 0;
 }
 
+uint8 tableTimeToSimpleTime(uint16* table_time, Simple_time *simple_time)
+{
+    if(table_time[0U] > 23U or table_time[1U] > 59)
+    {
+        return 1;
+    }
+    simple_time->hour = table_time[0U];
+    simple_time->minute = table_time[1U];
+    simple_time->second = 0U;
+    return 0;
+}
+
+//Looks for the file containing info of the specified bin, by looking for a matching bin ID.
+//Returns a pointer to the desired bin info, or NULL if the given bin_id was not found in the database.
+uint16* findBin(uint16 bin_id)
+{
+    uint8 i = 0U;
+    do
+    {
+        if(bins[i][0U] == bin_id)
+        {
+            return bins[i];
+        }
+        i++;
+    } while (i < TOTAL_BINS);
+
+    return NULL;
+}
+
 //Reads the schedule fixed in collectionCfg.h and stores it in "schedule" for easier reading
-//Returns 0 if successful, else there are parsing errors in -> 1=COLLECTION_START ; 2=COLLECTION_END ; 3=COLLECTION_DAYS
+//Returns 0 if successful, else there are parsing errors in -> 1=COLLECTION_START ; 2=COLLECTION_END ; 3=COLLECTION_DAYS ; 4=bin_id aws not found in bins table
 uint8 scheduleConfig(void)
 {
     if(!schedule_configured)
     {
         schedule_configured = true;
-        if(stringTimeToSimpleTime(COLLECTION_START, &(schedule.start)))
+
+        uint16* bin_info = findBin(EMITTER_ID);
+        if(bin_info == NULL)
+        {
+            return 4U;
+        }
+
+        if(tableTimeToSimpleTime(&(bin_info[2U]), &(schedule.start)))
         {
             return 1U;
         }
 
-        if(stringTimeToSimpleTime(COLLECTION_END, &(schedule.end)))
+        if(tableTimeToSimpleTime(&(bin_info[4U]), &(schedule.end)))
         {
             return 2U;
         }
