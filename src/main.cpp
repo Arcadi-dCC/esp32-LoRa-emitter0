@@ -7,8 +7,8 @@
 #include <collection.h>
 #include <AJ-SR04M_Drv.h>
 
-#define MIN_RETRY_DELAY 10000U //ms
-#define MAX_RETRY_DELAY 15000U //ms
+#define MIN_RETRY_DELAY 5000U //ms
+#define MAX_RETRY_DELAY 10000U //ms
 
 void setup() {
  
@@ -18,7 +18,7 @@ void setup() {
 
   if(scheduleConfig())
   {
-    Serial.println("Schedule has bad parsing. Check it in lib/collection/collectionCfg.h");
+    Serial.println("Schedule has something wrong. Check it in lib/collection/collectionCfg.cpp and .h");
     (void)sleepFor(0, 0, 0, 0xFFFF);
   }
 
