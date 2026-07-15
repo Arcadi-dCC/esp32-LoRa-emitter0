@@ -8,12 +8,13 @@
 #include <AJ-SR04M_Drv.h>
 #include <collectionCfg.h>
 
-RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 69, 0}; //Final items: data id, data
+RTC_DATA_ATTR uint8 out_packet [OUT_BUFFER_SIZE] = {(GATEWAY_ID & 0xFF00) >> 8, GATEWAY_ID & 0x00FF, EMITTER_ID, 0xFF, 0}; //Final items: data id, data
 volatile uint8 in_packet [IN_BUFFER_SIZE];
+
+RTC_DATA_ATTR volatile bool ack_received = true;
 
 volatile bool Cad_isr_responded = false;
 volatile bool channel_busy = true;
-volatile bool ack_received = false;
 volatile bool cldtime_received = false;
 
 //Encapsules the whole LoRa configuration. Returns 0 if successful, 1 if error.
@@ -81,12 +82,15 @@ void onCadDone(bool signalDetected) //true menas signal is detected
 //Returns 0 if successful, 1 if sensor not configured correctly, 2 if sensor did not respond.
 uint8 prepareNextPacket(void)
 {
-  //establish a new random data ID
-  uint8 old_data_id = out_packet[GATEWAY_ID_LEN + 1U];
-  do
+  //establish a new random data ID only if last sending was successful (acknowledgement was received)
+  if(ack_received)
   {
-    out_packet[GATEWAY_ID_LEN + 1U] = (uint8)random(0xFF);
-  }while(out_packet[GATEWAY_ID_LEN + 1U] == old_data_id);
+    uint8 old_data_id = out_packet[GATEWAY_ID_LEN + 1U];
+    do
+    {
+      out_packet[GATEWAY_ID_LEN + 1U] = (uint8)random(0xFF);
+    }while(out_packet[GATEWAY_ID_LEN + 1U] == old_data_id);
+  }
 
   //Get distance and convert it to fullness (%)
   RTC_DATA_ATTR static uint16 distance = 0U;
@@ -144,21 +148,14 @@ uint8 sendPacket(uint8* packet, uint16 packet_len)
 //Returns 0 if ACK, 1 if no ACK
 uint8 awaitAck(void)
 {
+  ack_received = false;
   LoRa.receive();
   uint32 start_time = millis();
   while((!ack_received) and ((millis() - start_time) < ACK_TIMEOUT))
   {
     NOP();
   }
-  if(ack_received)
-  {
-    ack_received = false;
-    return 0;
-  }
-  else
-  {
-    return 1;
-  }
+  return !ack_received; //standard bool -> true=1 false=0. Inverted to fit this program's return standard.
 }
 
 //Waits for reply with calendar time.
